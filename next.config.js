@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: "export",
+  // If your GitHub repo is not at the root of your domain, add the repo name here
+  basePath: process.env.NODE_ENV === "production" ? "/repo-name" : "",
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -11,4 +14,4 @@ const nextConfig = {
   },
 }
 
-export default nextConfig
+module.exports = nextConfig
