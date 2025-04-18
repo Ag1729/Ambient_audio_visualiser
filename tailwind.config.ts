@@ -19,6 +19,12 @@ const config = {
       },
     },
     extend: {
+      fontFamily: {
+        display: ["Pacifico", "cursive"],
+        body: ["Quicksand", "sans-serif"],
+        quicksand: ["var(--font-quicksand)"],
+        pacifico: ["var(--font-pacifico)"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
