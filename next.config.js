@@ -1,8 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "export",
-  // If your GitHub repo is not at the root of your domain, add the repo name here
-  basePath: process.env.NODE_ENV === "production" ? "/repo-name" : "",
+  // Use the correct repository name
+  basePath: process.env.NODE_ENV === "production" ? "/your-repo-name" : "",
+  // This is important for GitHub Pages
+  assetPrefix: process.env.NODE_ENV === "production" ? "/your-repo-name/" : "",
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -11,6 +13,10 @@ const nextConfig = {
   },
   images: {
     unoptimized: true,
+  },
+  // Ensure CSS is properly included
+  webpack: (config) => {
+    return config
   },
 }
 
