@@ -1047,17 +1047,25 @@ export default function AudioVisualizer() {
   }, [])
 
   // Handle double tap
-  const handleTap = useCallback(() => {
-    const now = Date.now()
-    const timeSinceLastTap = now - lastTapTime
+  const handleTap = useCallback(
+    (e: React.MouseEvent | React.TouchEvent) => {
+      // Prevent default behavior for touch events to avoid Safari's built-in double-tap zoom
+      if ("touches" in e) {
+        e.preventDefault()
+      }
 
-    if (timeSinceLastTap < 300) {
-      // Double tap threshold
-      toggleFullscreen()
-    }
+      const now = Date.now()
+      const timeSinceLastTap = now - lastTapTime
 
-    setLastTapTime(now)
-  }, [lastTapTime, toggleFullscreen])
+      if (timeSinceLastTap < 300) {
+        // Double tap threshold
+        toggleFullscreen()
+      }
+
+      setLastTapTime(now)
+    },
+    [lastTapTime, toggleFullscreen],
+  )
 
   // Handle mouse movement to show controls in fullscreen
   const handleMouseMove = useCallback(() => {
@@ -1088,6 +1096,25 @@ export default function AudioVisualizer() {
       setControlsTimeout(null)
     }
   }, [showFullscreenControls, controlsTimeout])
+
+  // Add specific handling for iOS Safari touch events
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    // Prevent default behavior for touchstart to avoid Safari's double-tap zoom
+    const preventDefaultTouch = (e: TouchEvent) => {
+      if (e.touches.length === 1) {
+        e.preventDefault()
+      }
+    }
+
+    container.addEventListener("touchstart", preventDefaultTouch, { passive: false })
+
+    return () => {
+      container.removeEventListener("touchstart", preventDefaultTouch)
+    }
+  }, [])
 
   return (
     <div className="flex flex-col items-center space-y-6 font-['Quicksand',_sans-serif]">
@@ -1350,7 +1377,10 @@ export default function AudioVisualizer() {
           isFullscreen ? "border-0 rounded-none" : "",
         )}
         onClick={handleTap}
+        onTouchStart={handleTap}
+        onTouchEnd={(e) => e.preventDefault()} // Prevent ghost clicks
         onMouseMove={handleMouseMove}
+        style={{ touchAction: "manipulation" }} // Disable browser handling of gestures
       >
         <canvas ref={canvasRef} className="w-full h-full" />
 
