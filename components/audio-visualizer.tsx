@@ -66,6 +66,7 @@ export default function AudioVisualizer() {
   const [particleCount, setParticleCount] = useState(100)
   const [timeScale, setTimeScale] = useState(1.0)
   const [isLoading, setIsLoading] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -91,6 +92,20 @@ export default function AudioVisualizer() {
   >([])
 
   const currentVisualizerTypeRef = useRef<VisualizerType>(visualizerType)
+
+  // Check if device is mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+
+    checkMobile()
+    window.addEventListener("resize", checkMobile)
+
+    return () => {
+      window.removeEventListener("resize", checkMobile)
+    }
+  }, [])
 
   // Define presets
   const presets: Preset[] = [
@@ -222,7 +237,7 @@ export default function AudioVisualizer() {
 
   // Initialize particles for milkdrop visualization
   useEffect(() => {
-    if (visualizerType === "milkdrop" || visualizerType === "vortex") {
+    if (visualizerType === "fluidMotion" || visualizerType === "vortex") {
       initializeParticles()
     }
   }, [visualizerType, particleCount])
@@ -301,7 +316,12 @@ export default function AudioVisualizer() {
     setIsListening(false)
   }
 
-  const toggleListening = () => {
+  const toggleListening = (e?: React.MouseEvent | React.TouchEvent) => {
+    // Stop propagation to prevent double-tap from triggering
+    if (e) {
+      e.stopPropagation()
+    }
+
     if (isListening) {
       stopListening()
     } else {
@@ -560,7 +580,7 @@ export default function AudioVisualizer() {
     ctx.stroke()
   }
 
-  // Mirror wave visualization (inspired by the AM album cover)
+  // Mirror wave visualization
   const drawMirrorWave = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
     if (!analyserRef.current || !dataArrayRef.current) return
 
@@ -1121,12 +1141,12 @@ export default function AudioVisualizer() {
       {!isFullscreen && (
         <>
           <div className="flex flex-wrap items-center justify-between w-full gap-4 mb-4">
-            <div className="flex items-center gap-4">
+            <div className={`flex ${isMobile ? "flex-col w-full" : "items-center"} gap-4`}>
               <Button
                 onClick={toggleListening}
                 variant={isListening ? "destructive" : "default"}
-                size="lg"
-                className="gap-2"
+                size={isMobile ? "default" : "lg"}
+                className={`gap-2 ${isMobile ? "w-full" : ""}`}
               >
                 {isListening ? <MicOff size={18} /> : <Mic size={18} />}
                 {isListening ? "Stop Listening" : "Start Listening"}
@@ -1136,7 +1156,7 @@ export default function AudioVisualizer() {
                 value={visualizerType}
                 onValueChange={(value) => handleVisualizerTypeChange(value as VisualizerType)}
               >
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className={isMobile ? "w-full" : "w-[180px]"}>
                   <SelectValue placeholder="Visualizer Type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1208,7 +1228,7 @@ export default function AudioVisualizer() {
               </Select>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className={`flex items-center gap-2 ${isMobile ? "w-full justify-between mt-2" : ""}`}>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="icon">
@@ -1251,7 +1271,7 @@ export default function AudioVisualizer() {
                       />
                     </div>
 
-                    {(visualizerType === "milkdrop" || visualizerType === "vortex") && (
+                    {(visualizerType === "fluidMotion" || visualizerType === "vortex") && (
                       <>
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
@@ -1385,8 +1405,15 @@ export default function AudioVisualizer() {
         <canvas ref={canvasRef} className="w-full h-full" />
 
         {!isListening && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/70">
-            <Button size="lg" onClick={toggleListening} className="gap-2 text-lg">
+          <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-10">
+            <Button
+              size={isMobile ? "default" : "lg"}
+              onClick={(e) => toggleListening(e)}
+              className="gap-2 text-lg"
+              onTouchStart={(e) => {
+                e.stopPropagation()
+              }}
+            >
               <Mic size={24} />
               Start Listening
             </Button>
@@ -1415,7 +1442,7 @@ export default function AudioVisualizer() {
               </div>
 
               {/* Presets in fullscreen */}
-              <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
+              <div className={`grid ${isMobile ? "grid-cols-2" : "grid-cols-4 md:grid-cols-8"} gap-2`}>
                 {presets.map((preset) => (
                   <Button
                     key={preset.id}
@@ -1433,10 +1460,10 @@ export default function AudioVisualizer() {
               </div>
 
               {/* Minimal settings in fullscreen */}
-              <div className="flex items-center gap-4 justify-between flex-wrap">
-                <div className="flex items-center gap-2">
+              <div className={`flex ${isMobile ? "flex-col" : "items-center"} gap-4 justify-between flex-wrap`}>
+                <div className={`flex ${isMobile ? "w-full justify-between" : ""} items-center gap-2`}>
                   <Button
-                    onClick={toggleListening}
+                    onClick={(e) => toggleListening(e)}
                     variant={isListening ? "destructive" : "default"}
                     size="sm"
                     className="gap-1"
@@ -1449,7 +1476,7 @@ export default function AudioVisualizer() {
                     value={visualizerType}
                     onValueChange={(value) => handleVisualizerTypeChange(value as VisualizerType)}
                   >
-                    <SelectTrigger className="w-[140px] h-8">
+                    <SelectTrigger className={isMobile ? "w-[120px]" : "w-[140px]"} style={{ height: "32px" }}>
                       <SelectValue placeholder="Visualizer Type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1465,8 +1492,8 @@ export default function AudioVisualizer() {
                   </Select>
                 </div>
 
-                <div className="flex items-center gap-4 flex-wrap">
-                  <div className="flex flex-col gap-1 w-32">
+                <div className={`flex ${isMobile ? "flex-col w-full" : "items-center"} gap-4 flex-wrap`}>
+                  <div className="flex flex-col gap-1 w-full sm:w-32">
                     <label className="text-xs text-white/70">Sensitivity</label>
                     <Slider
                       min={0.5}
@@ -1477,7 +1504,7 @@ export default function AudioVisualizer() {
                     />
                   </div>
 
-                  <div className="flex flex-col gap-1 w-32">
+                  <div className="flex flex-col gap-1 w-full sm:w-32">
                     <label className="text-xs text-white/70">Trail Effect</label>
                     <Slider
                       min={0}
@@ -1489,7 +1516,7 @@ export default function AudioVisualizer() {
                   </div>
 
                   <Select value={colorScheme} onValueChange={(value) => setColorScheme(value as ColorScheme)}>
-                    <SelectTrigger className="w-[140px] h-8">
+                    <SelectTrigger className={isMobile ? "w-full" : "w-[140px]"} style={{ height: "32px" }}>
                       <SelectValue placeholder="Color Scheme" />
                     </SelectTrigger>
                     <SelectContent>
